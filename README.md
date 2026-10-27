@@ -9,7 +9,7 @@ if you're Germanic about it.
 locomotives together and running them as one unit under one driver's
 control — exactly what this does with GPUs too weak to pull the train
 alone. Turns two or more identical low-VRAM laptops (the reference build:
-Dell XPS 15 9570, 2018, 32GB RAM, 4GB VRAM GTX 1050 Ti) into either a
+Dell XPS 15 7590, 2019, i7-9750H, 32GB RAM, 4GB VRAM GTX 1650 Mobile) into either a
 render fleet or, for the more ambitious build, a single pipeline-parallel
 model split across their GPUs.
 
@@ -169,3 +169,17 @@ systemctl --user daemon-reload && systemctl --user enable --now multitraktion-co
 loginctl enable-linger $USER      # start at boot without a login
 journalctl --user -u multitraktion-coordinator -f
 ```
+
+## Tuning a node
+
+Tune one node, copy the result to the others (same hardware, same answer):
+
+```
+~/sdvenv/bin/python fleet/bench.py --tune-quality     # ~20-40 min, writes bench-best.json
+python3 fleet/worker.py --coordinator http://<coordinator>:8765 --config bench-best.json
+```
+
+`bench-best.json` keeps the baseline image quality; `bench-fast.json` (from
+`--tune-quality`) trades quality for speed, so look at `bench-out/` first.
+On Pascal cards (GTX 10xx) fp16 runs at a fraction of fp32 speed, which is
+why the benchmark tests both.
