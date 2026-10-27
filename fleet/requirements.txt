@@ -1,0 +1,8 @@
+# Pin these to the exact versions used across every node in the fleet -
+# see ../README.md's apples-to-apples section. Example versions below;
+# replace with whatever your reference machine actually reports.
+torch==2.3.1
+diffusers==0.27.2
+transformers==4.40.2
+accelerate==0.30.1
+pillow
