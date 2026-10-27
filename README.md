@@ -157,3 +157,15 @@ not specific to one machine or one project. If you build it out further
 generating images, or the full UNet pipeline split), a PR with what you
 found — especially real `iperf3` numbers and per-step timings — is very
 welcome.
+
+### Running the coordinator as a service
+
+`deploy/multitraktion-coordinator.service` is a systemd *user* unit (expects the
+repo at `~/Projects/multitraktion`, with `prompts.txt` and `controls/plan.png`):
+
+```
+mkdir -p ~/.config/systemd/user && cp deploy/multitraktion-coordinator.service ~/.config/systemd/user/
+systemctl --user daemon-reload && systemctl --user enable --now multitraktion-coordinator
+loginctl enable-linger $USER      # start at boot without a login
+journalctl --user -u multitraktion-coordinator -f
+```

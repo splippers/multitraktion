@@ -1,0 +1,13 @@
+[Unit]
+Description=MultiTraktion render-fleet coordinator
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+WorkingDirectory=%h/Projects/multitraktion
+ExecStart=/usr/bin/python3 fleet/coordinator.py --prompts prompts.txt --control-dir controls --default-control plan.png --port 8765
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=default.target
