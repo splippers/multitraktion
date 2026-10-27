@@ -51,20 +51,28 @@ class GpuSampler:
 
     def _read(self):
         for line in self._proc.stdout:
-            try:
-                self.rows.append([float(x) for x in line.split(",")])
-            except ValueError:  # "[N/A]" on some mobile parts
-                pass
+            row = []
+            for x in line.split(","):
+                try:
+                    row.append(float(x))
+                except ValueError:  # "[N/A]": some mobile parts report no power draw
+                    row.append(float("nan"))
+            self.rows.append(row)
 
     def stop(self) -> dict:
         self._proc.terminate()
         self._t.join(timeout=2)
-        if not self.rows:
-            return {}
-        col = list(zip(*self.rows))
-        return {"gpu_util_pct": round(statistics.mean(col[0])),
-                "sm_clock_mhz": round(statistics.mean(col[1])),
-                "max_temp_c": max(col[2]), "avg_power_w": round(statistics.mean(col[3]), 1)}
+        names = ("gpu_util_pct", "sm_clock_mhz", "max_temp_c", "avg_power_w")
+        out = {}
+        for name, col in zip(names, zip(*self.rows)):
+            vals = [v for v in col if v == v]  # drop NaN
+            if not vals:
+                continue
+            if name == "max_temp_c":
+                out[name] = max(vals)
+            else:
+                out[name] = round(statistics.mean(vals), 1 if name == "avg_power_w" else 0)
+        return out
 
 
 def run_one(cfg: Config, args) -> dict:
