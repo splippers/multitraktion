@@ -8,8 +8,7 @@ if you're Germanic about it.
 `Mehrfachtraktion` is the real German railway term for coupling several
 locomotives together and running them as one unit under one driver's
 control — exactly what this does with GPUs too weak to pull the train
-alone. Turns two or more identical low-VRAM laptops (the reference build:
-Dell XPS 15 7590, 2019, i7-9750H, 32GB RAM, 4GB VRAM GTX 1650 Mobile) into either a
+alone. Turns two or more low-VRAM laptops into either a
 render fleet or, for the more ambitious build, a single pipeline-parallel
 model split across their GPUs.
 
@@ -22,7 +21,7 @@ Two tiers, in order of effort:
 
 1. **Fleet (`fleet/`)** — each machine runs a full SD1.5 + ControlNet
    pipeline independently. No model splitting, no VRAM pooling. N
-   identical laptops = N× throughput. Works today, no distributed-systems
+   laptops = roughly N× throughput (they need not be identical: a faster node simply pulls more jobs). Works today, no distributed-systems
    code required beyond a trivial job queue.
 2. **Pipeline (`pipeline/`)** — a model too big for one card (SDXL needs
    ~6.5–8GB; these cards have 4GB) is split across machines, each holding
@@ -33,7 +32,21 @@ Start with the fleet. Only build the pipeline if you specifically want
 SDXL-quality output or want the distributed-systems exercise for its own
 sake — it will not make four 4GB cards behave like one 16GB card.
 
+## Reference hardware
+
+| Node | Laptop | GPU (4GB) | NVIDIA driver | Measured, 512px, fp32 + sequential offload |
+|---|---|---|---|---|
+| LAVE (coordinator) | XPS 15 7590, i7-9750H, 30GB | GTX 1650 Mobile (Turing) | 615 (open) | 25 steps 60.7 s, DPM++ 12 steps 28.3 s |
+| traktion2 | XPS 15 9570, i7-8750H, 15GB | GTX 1050 Ti Max-Q (Pascal) | **580** (Pascal needs the proprietary 580 branch; 590+ dropped it) | 25 steps ~82 s, DPM++ 12 steps ~49 s |
+
+The two nodes differ, so tune each one (see "Tuning a node"). Numbers drift
+upward over a long run on the 9570 (power-capped Max-Q part), so treat them as rough.
+Install the server without a desktop: GNOME/GDM applies its own sleep rules and
+overrides logind's lid setting (`deploy/never-sleep-on-ac.sh`).
+
 ## Apples-to-apples build (do this before any of the above)
+
+*Needed for the pipeline tier. The fleet tier only needs each node to be internally consistent.*
 
 Hardware identical is not the same as software identical. Lock down one
 reference machine first, then match every other node to it exactly:
@@ -151,7 +164,7 @@ dist.init_process_group(backend="gloo",
 
 ## Contributing
 
-Written to be reproducible on anyone's set of identical low-VRAM laptops,
+Written to be reproducible on anyone's set of low-VRAM laptops,
 not specific to one machine or one project. If you build it out further
 (the 2.5GbE switch version, the coarse rank0/rank1 split actually
 generating images, or the full UNet pipeline split), a PR with what you
