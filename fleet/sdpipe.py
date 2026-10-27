@@ -23,9 +23,9 @@ class Config:
     offload: str = "sequential"  # none | model | sequential (the safe default fits any GPU)
     attention: str = "sdpa"    # sdpa | slicing
     vae: str = "normal"        # normal | slicing | tiling
-    channels_last: bool = False
-    scheduler: str = "default"  # default | unipc | dpmpp
-    steps: int = 25
+    channels_last: bool = True
+    scheduler: str = "dpmpp"   # default | unipc | dpmpp
+    steps: int = 12
     size: int = 512
 
     def label(self) -> str:

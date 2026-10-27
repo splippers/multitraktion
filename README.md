@@ -172,15 +172,20 @@ journalctl --user -u multitraktion-coordinator -f
 
 ## Tuning a node
 
-Tune one node, copy the result to the others (same hardware, same answer):
+The built-in defaults are the best config measured on the XPS 15 7590 (GTX 1650
+Mobile, 4GB): fp32, sequential offload, `channels_last`, DPM++ at 12 steps, 512px
+= ~28 s/img. A different GPU may want different settings, so tune it:
 
 ```
 ~/sdvenv/bin/python fleet/bench.py --tune-quality     # ~20-40 min, writes bench-best.json
-python3 fleet/worker.py --coordinator http://<coordinator>:8765 --config bench-best.json
+cp bench-best.json worker-config.json                 # this node's override; the worker service picks it up
 ```
 
-`bench-best.json` keeps the baseline image quality; `bench-fast.json` (from
-`--tune-quality`) trades quality for speed, so look at `bench-out/` first.
+`bench-best.json` keeps full image quality (25 steps, default scheduler);
+`bench-fast.json` (from `--tune-quality`) is the fastest config found. Look at
+`bench-out/` before adopting either. For a one-off run:
+`python3 fleet/worker.py --coordinator http://<coordinator>:8765 --config bench-fast.json`.
+
 **fp16 is unusable on GTX 16xx (Turing TU117) with this stack:** the UNet and
 ControlNet produce NaNs and every image is black. On Pascal (GTX 10xx) it is merely slow.
 The benchmark rejects blank output and the worker refuses to deliver it, and the

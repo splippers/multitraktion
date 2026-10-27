@@ -165,7 +165,8 @@ def main() -> None:
     print(f"GPU: {gpu}\nTimed images per config: {args.images} (after 1 warm-up)\n")
 
     cache: dict[Config, dict] = {}
-    base = Config(dtype="fp16", offload="model")  # the old worker default, for the speed-up comparison
+    # full-quality reference (25-step default scheduler) = the old worker default, so stages 1-2 stay lossless
+    base = Config(dtype="fp16", offload="model", channels_last=False, scheduler="default", steps=25)
 
     print("Stage 1: dtype x offload")
     stage1 = [base.with_(dtype=d, offload=o)
