@@ -1,0 +1,3 @@
+# one job per line; " | control=<file in controls/>" is optional
+a Victorian brick signal box with slate roof, concept illustration, soft light | control=signalbox.png
+a timber goods shed beside a single track, concept illustration
