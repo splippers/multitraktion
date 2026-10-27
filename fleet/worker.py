@@ -65,6 +65,8 @@ def main() -> None:
     p.add_argument("--control-model", default="lllyasviel/sd-controlnet-canny")
     p.add_argument("--base-model", default="runwayml/stable-diffusion-v1-5")
     p.add_argument("--poll-interval", type=float, default=5.0)
+    p.add_argument("--exit-when-done", action="store_true",
+                   help="exit once the queue is drained (default: keep polling for new jobs)")
     p.add_argument("--config", type=Path, default=None,
                    help="JSON written by bench.py (bench-best.json); flags below override it")
     for name, kind in (("dtype", str), ("offload", str), ("attention", str), ("vae", str),
@@ -91,7 +93,7 @@ def main() -> None:
             continue
 
         if "id" not in job:
-            if job.get("done"):
+            if job.get("done") and args.exit_when_done:
                 print("[worker] all jobs finished, exiting")
                 return
             time.sleep(args.poll_interval)

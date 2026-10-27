@@ -111,8 +111,8 @@ python3 fleet/worker.py --coordinator http://10.10.10.1:8765
 Each line of `prompts.txt` is one job and may end in ` | control=<file>` to
 pick that job's control image from `--control-dir` (see `prompts.example.txt`).
 Jobs without one use `--default-control`; a worker can also be given a local
-`--control-image` as a last-resort fallback. Workers exit when the queue is
-drained. A job that fails (e.g. out of VRAM) or goes quiet for 10 minutes is
+`--control-image` as a last-resort fallback. Workers keep polling for new jobs
+(`--exit-when-done` makes them exit once the queue is drained). A job that fails (e.g. out of VRAM) or goes quiet for 10 minutes is
 retried up to 3 times, then listed under `failed` at `GET /status`. Run
 `python3 -m pytest tests` to check the coordinator.
 
