@@ -22,7 +22,7 @@ from pathlib import Path
 import torch
 from PIL import Image
 
-from sdpipe import Config, build_pipeline, render
+from sdpipe import Config, build_pipeline, is_blank, render
 
 HTTP_TIMEOUT = 30
 
@@ -106,6 +106,8 @@ def main() -> None:
             else:
                 raise RuntimeError("job has no control image and no --control-image given")
             result = render(pipe, cfg, job["prompt"], control)
+            if is_blank(result):
+                raise RuntimeError("blank image - GPU produced NaNs; use --dtype fp32")
             post_result(args.coordinator, job["id"], result)
             print(f"[worker] job {job['id']} done")
         except Exception as e:  # report and carry on; coordinator retries the job

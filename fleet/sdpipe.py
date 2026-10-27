@@ -19,8 +19,8 @@ SCHEDULERS = {"unipc": UniPCMultistepScheduler, "dpmpp": DPMSolverMultistepSched
 
 @dataclass(frozen=True)
 class Config:
-    dtype: str = "fp16"        # fp16 | fp32 (Pascal cards run fp16 very slowly)
-    offload: str = "model"     # none | model | sequential
+    dtype: str = "fp32"        # fp16 | fp32 (fp16 gives NaN/black images on GTX 16xx, slow on 10xx)
+    offload: str = "sequential"  # none | model | sequential (the safe default fits any GPU)
     attention: str = "sdpa"    # sdpa | slicing
     vae: str = "normal"        # normal | slicing | tiling
     channels_last: bool = False
@@ -71,6 +71,12 @@ def build_pipeline(cfg: Config, control_model: str, base_model: str):
         pipe.enable_sequential_cpu_offload()
     pipe.set_progress_bar_config(disable=True)
     return pipe
+
+
+def is_blank(image: Image.Image) -> bool:
+    """True for an all-black/flat image - the signature of fp16 NaNs."""
+    lo, hi = image.convert("L").getextrema()
+    return hi - lo < 8
 
 
 def render(pipe, cfg: Config, prompt: str, control: Image.Image, seed: int | None = None):

@@ -181,5 +181,9 @@ python3 fleet/worker.py --coordinator http://<coordinator>:8765 --config bench-b
 
 `bench-best.json` keeps the baseline image quality; `bench-fast.json` (from
 `--tune-quality`) trades quality for speed, so look at `bench-out/` first.
-On Pascal cards (GTX 10xx) fp16 runs at a fraction of fp32 speed, which is
-why the benchmark tests both.
+**fp16 is unusable on GTX 16xx (Turing TU117) with this stack:** the UNet and
+ControlNet produce NaNs and every image is black. On Pascal (GTX 10xx) it is merely slow.
+The benchmark rejects blank output and the worker refuses to deliver it, and the
+default config is fp32 + sequential offload, which is correct on any GPU.
+Measured on the XPS 15 7590 (GTX 1650 Mobile, 4GB): fp32 + sequential offload +
+channels_last, 25 steps, 512px = 60.7 s/img; DPM++ at 12 steps = 28.3 s/img.

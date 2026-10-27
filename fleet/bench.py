@@ -70,7 +70,7 @@ class GpuSampler:
 def run_one(cfg: Config, args) -> dict:
     import torch
     from PIL import Image
-    from sdpipe import build_pipeline, render
+    from sdpipe import build_pipeline, is_blank, render
 
     control = Image.open(args.control_image).convert("RGB")
     out = Path(args.out)
@@ -91,6 +91,8 @@ def run_one(cfg: Config, args) -> dict:
             times.append(time.time() - t)
         stats = sampler.stop()
         img.save(out / f"{cfg.label()}.png")
+        if is_blank(img):
+            return {"ok": False, "error": "blank image (fp16 NaNs?) - timing is meaningless"}
         med = statistics.median(times)
         return {"ok": True, "s_per_img": round(med, 2), "s_per_step": round(med / cfg.steps, 3),
                 "peak_vram_gb": round(torch.cuda.max_memory_allocated() / 2**30, 2),
@@ -163,7 +165,7 @@ def main() -> None:
     print(f"GPU: {gpu}\nTimed images per config: {args.images} (after 1 warm-up)\n")
 
     cache: dict[Config, dict] = {}
-    base = Config()
+    base = Config(dtype="fp16", offload="model")  # the old worker default, for the speed-up comparison
 
     print("Stage 1: dtype x offload")
     stage1 = [base.with_(dtype=d, offload=o)

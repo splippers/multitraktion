@@ -1,0 +1,14 @@
+[Unit]
+Description=MultiTraktion render-fleet worker
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=jon
+EnvironmentFile=-/etc/default/multitraktion
+ExecStart=/home/jon/Projects/multitraktion/deploy/run-worker.sh
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
