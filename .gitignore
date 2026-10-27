@@ -4,3 +4,5 @@ out/
 prompts.txt
 controls/
 *.log
+bench-out/
+bench-*.json

@@ -17,21 +17,14 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from pathlib import Path
 
 import torch
-from diffusers import ControlNetModel, StableDiffusionControlNetPipeline
 from PIL import Image
 
+from sdpipe import Config, build_pipeline, render
+
 HTTP_TIMEOUT = 30
-
-
-def load_pipeline(control_model: str, base_model: str):
-    controlnet = ControlNetModel.from_pretrained(control_model, torch_dtype=torch.float16)
-    pipe = StableDiffusionControlNetPipeline.from_pretrained(
-        base_model, controlnet=controlnet, torch_dtype=torch.float16, safety_checker=None
-    )
-    pipe.enable_model_cpu_offload()  # keeps this workable on 4GB VRAM
-    return pipe
 
 
 def fetch_job(coordinator: str) -> dict:
@@ -72,11 +65,21 @@ def main() -> None:
     p.add_argument("--control-model", default="lllyasviel/sd-controlnet-canny")
     p.add_argument("--base-model", default="runwayml/stable-diffusion-v1-5")
     p.add_argument("--poll-interval", type=float, default=5.0)
-    p.add_argument("--steps", type=int, default=25)
+    p.add_argument("--config", type=Path, default=None,
+                   help="JSON written by bench.py (bench-best.json); flags below override it")
+    for name, kind in (("dtype", str), ("offload", str), ("attention", str), ("vae", str),
+                       ("scheduler", str), ("steps", int), ("size", int)):
+        p.add_argument(f"--{name}", type=kind, default=None)
     args = p.parse_args()
 
+    cfg = Config.load(args.config) if args.config else Config()
+    cfg = cfg.with_(**{k: getattr(args, k) for k in
+                       ("dtype", "offload", "attention", "vae", "scheduler", "steps", "size")
+                       if getattr(args, k) is not None})
+    print(f"[worker] config: {cfg.label()}")
+
     fallback = Image.open(args.control_image).convert("RGB") if args.control_image else None
-    pipe = load_pipeline(args.control_model, args.base_model)
+    pipe = build_pipeline(cfg, args.control_model, args.base_model)
     cache: dict[str, Image.Image] = {}
 
     while True:
@@ -102,8 +105,7 @@ def main() -> None:
                 control = fallback
             else:
                 raise RuntimeError("job has no control image and no --control-image given")
-            result = pipe(job["prompt"], image=control,
-                          num_inference_steps=args.steps).images[0]
+            result = render(pipe, cfg, job["prompt"], control)
             post_result(args.coordinator, job["id"], result)
             print(f"[worker] job {job['id']} done")
         except Exception as e:  # report and carry on; coordinator retries the job
