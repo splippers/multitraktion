@@ -22,3 +22,11 @@ Notes
 - The RPC row is confounded (client and server shared one CPU), but llama.cpp
   also runs the local and RPC portions sequentially, so splitting experts
   across two machines this way cannot double memory bandwidth.
+
+## Service
+
+`deploy/multitraktion-llm.service` is a user unit (installed like the
+coordinator's). It serves an OpenAI-compatible API with tool calling on
+`127.0.0.1:8090` only; it holds ~3.4 GB VRAM and ~14 GB RAM, so
+`systemctl --user stop multitraktion-llm` before running the image worker or a game.
+`MODEL` points at Ollama's blob for qwen3-coder:30b - update it if Ollama prunes it.

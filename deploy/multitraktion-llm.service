@@ -1,0 +1,15 @@
+[Unit]
+Description=MultiTraktion local tool-calling LLM (llama.cpp, Qwen3-Coder-30B-A3B)
+After=network.target
+
+[Service]
+# Takes ~3.5 GB VRAM and ~14 GB RAM; stop it before running the image worker or a game.
+# MODEL is the Ollama blob for qwen3-coder:30b; change it if Ollama prunes the blob.
+Environment=MODEL=/usr/share/ollama/.ollama/models/blobs/sha256-1194192cf2a187eb02722edcc3f77b11d21f537048ce04b67ccf8ba78863006a
+Environment=LLAMA_CPP=%h/llama.cpp
+ExecStart=%h/Projects/multitraktion/llm/serve.sh
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target
