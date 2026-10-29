@@ -14,3 +14,5 @@ numpy<2
 # which needs setuptools, absent from python3.12 venvs
 peft==0.11.1
 setuptools<81
+# DeepCache option (fleet/sdpipe.py cache_interval)
+DeepCache==0.1.1

@@ -32,6 +32,7 @@ class Config:
     guidance: float = 7.5      # LCM wants ~1.0-2.0; <=1 skips the unconditional pass
     control_scale: float = 1.0  # ControlNet strength; lower lets the prompt decide more
     control_end: float = 1.0   # fraction of steps the ControlNet is active (<1 frees the last steps)
+    cache_interval: int = 0    # DeepCache: reuse deep UNet features, full pass every N steps (0 = off, 2 is near-lossless)
 
     def label(self) -> str:
         parts = [self.dtype, f"off-{self.offload}", self.attention, f"vae-{self.vae}"]
@@ -44,6 +45,8 @@ class Config:
             parts.append(f"cfg{self.guidance:g}")
         if self.control_scale != 1.0 or self.control_end != 1.0:
             parts.append(f"ctl{self.control_scale:g}-{self.control_end:g}")
+        if self.cache_interval > 1:
+            parts.append(f"dc{self.cache_interval}")
         return "_".join(parts)
 
     def with_(self, **kw) -> "Config":
@@ -83,6 +86,11 @@ def build_pipeline(cfg: Config, control_model: str, base_model: str):
         pipe.enable_model_cpu_offload()
     else:
         pipe.enable_sequential_cpu_offload()
+    if cfg.cache_interval > 1:
+        from DeepCache import DeepCacheSDHelper
+        helper = DeepCacheSDHelper(pipe=pipe)
+        helper.set_params(cache_interval=cfg.cache_interval, cache_branch_id=0)
+        helper.enable()
     pipe.set_progress_bar_config(disable=True)
     return pipe
 
