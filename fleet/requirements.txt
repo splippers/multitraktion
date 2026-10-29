@@ -10,3 +10,7 @@ pillow
 # torch 2.3.1 was built against numpy 1.x
 huggingface_hub==0.25.2
 numpy<2
+# LCM-LoRA support (fleet/sdpipe.py); peft imports torch.utils.cpp_extension,
+# which needs setuptools, absent from python3.12 venvs
+peft==0.11.1
+setuptools<81

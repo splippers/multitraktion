@@ -1,0 +1,14 @@
+{
+  "dtype": "fp32",
+  "offload": "sequential",
+  "attention": "sdpa",
+  "vae": "normal",
+  "channels_last": true,
+  "scheduler": "lcm",
+  "steps": 4,
+  "size": 512,
+  "lora": "latent-consistency/lcm-lora-sdv1-5",
+  "guidance": 1.0,
+  "control_scale": 0.6,
+  "control_end": 0.6
+}

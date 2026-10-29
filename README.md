@@ -205,3 +205,13 @@ The benchmark rejects blank output and the worker refuses to deliver it, and the
 default config is fp32 + sequential offload, which is correct on any GPU.
 Measured on the XPS 15 7590 (GTX 1650 Mobile, 4GB): fp32 + sequential offload +
 channels_last, 25 steps, 512px = 60.7 s/img; DPM++ at 12 steps = 28.3 s/img.
+
+## LCM-LoRA preset (about 4x faster)
+
+`fleet/config-lcm.json` renders in 4 steps with the LCM-LoRA merged into the UNet
+and no unconditional pass (guidance 1.0), with the ControlNet weakened to 0.6 and
+switched off after 60% of the steps. Measured on LAVE (GTX 1650), 4 prompts:
+28-30 s/img with the default DPM++ 12-step config vs 7.5 s/img. LCM at full
+ControlNet strength looks flat and traces the outline too literally; at 0.6 it follows the
+prompt. The style is cleaner and more saturated than DPM++, not identical -
+run with `worker.py --config fleet/config-lcm.json`. Needs `peft` (in requirements.txt).

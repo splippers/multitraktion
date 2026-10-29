@@ -9,12 +9,13 @@ from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 
 import torch
-from diffusers import (ControlNetModel, DPMSolverMultistepScheduler,
+from diffusers import (ControlNetModel, DPMSolverMultistepScheduler, LCMScheduler,
                        StableDiffusionControlNetPipeline, UniPCMultistepScheduler)
 from PIL import Image
 
 DTYPES = {"fp16": torch.float16, "fp32": torch.float32}
-SCHEDULERS = {"unipc": UniPCMultistepScheduler, "dpmpp": DPMSolverMultistepScheduler}
+SCHEDULERS = {"unipc": UniPCMultistepScheduler, "dpmpp": DPMSolverMultistepScheduler,
+              "lcm": LCMScheduler}
 
 
 @dataclass(frozen=True)
@@ -24,15 +25,25 @@ class Config:
     attention: str = "sdpa"    # sdpa | slicing
     vae: str = "normal"        # normal | slicing | tiling
     channels_last: bool = True
-    scheduler: str = "dpmpp"   # default | unipc | dpmpp
+    scheduler: str = "dpmpp"   # default | unipc | dpmpp | lcm (use with lora)
     steps: int = 12
     size: int = 512
+    lora: str = ""             # e.g. latent-consistency/lcm-lora-sdv1-5; fused at load
+    guidance: float = 7.5      # LCM wants ~1.0-2.0; <=1 skips the unconditional pass
+    control_scale: float = 1.0  # ControlNet strength; lower lets the prompt decide more
+    control_end: float = 1.0   # fraction of steps the ControlNet is active (<1 frees the last steps)
 
     def label(self) -> str:
         parts = [self.dtype, f"off-{self.offload}", self.attention, f"vae-{self.vae}"]
         if self.channels_last:
             parts.append("chlast")
         parts += [self.scheduler, f"{self.steps}st", f"{self.size}px"]
+        if self.lora:
+            parts.append("lora-" + self.lora.rsplit("/", 1)[-1])
+        if self.guidance != 7.5:
+            parts.append(f"cfg{self.guidance:g}")
+        if self.control_scale != 1.0 or self.control_end != 1.0:
+            parts.append(f"ctl{self.control_scale:g}-{self.control_end:g}")
         return "_".join(parts)
 
     def with_(self, **kw) -> "Config":
@@ -54,6 +65,9 @@ def build_pipeline(cfg: Config, control_model: str, base_model: str):
     )
     if cfg.scheduler != "default":
         pipe.scheduler = SCHEDULERS[cfg.scheduler].from_config(pipe.scheduler.config)
+    if cfg.lora:
+        pipe.load_lora_weights(cfg.lora)
+        pipe.fuse_lora()  # merge into the weights: no per-step LoRA overhead
     if cfg.attention == "slicing":
         pipe.enable_attention_slicing()
     if cfg.vae == "slicing":
@@ -83,4 +97,6 @@ def render(pipe, cfg: Config, prompt: str, control: Image.Image, seed: int | Non
     control = control.resize((cfg.size, cfg.size))
     gen = torch.Generator("cpu").manual_seed(seed) if seed is not None else None
     return pipe(prompt, image=control, num_inference_steps=cfg.steps,
-                height=cfg.size, width=cfg.size, generator=gen).images[0]
+                guidance_scale=cfg.guidance, height=cfg.size, width=cfg.size,
+                controlnet_conditioning_scale=cfg.control_scale,
+                control_guidance_end=cfg.control_end, generator=gen).images[0]
