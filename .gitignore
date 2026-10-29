@@ -6,3 +6,5 @@ controls/
 *.log
 bench-out/
 bench-*.json
+worker-config.json
+out-*/
