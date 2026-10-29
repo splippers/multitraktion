@@ -37,7 +37,7 @@ sake — it will not make four 4GB cards behave like one 16GB card.
 | Node | Laptop | GPU (4GB) | NVIDIA driver | Measured, 512px, fp32 + sequential offload |
 |---|---|---|---|---|
 | LAVE (coordinator) | XPS 15 7590, i7-9750H, 30GB | GTX 1650 Mobile (Turing) | 615 (open) | 25 steps 60.7 s, DPM++ 12 steps 28.3 s |
-| traktion2 | XPS 15 9570, i7-8750H, 15GB | GTX 1050 Ti Max-Q (Pascal) | **580** (Pascal needs the proprietary 580 branch; 590+ dropped it) | 25 steps ~82 s, DPM++ 12 steps ~49 s |
+| diso | XPS 15 9570, i7-8750H, 15GB | GTX 1050 Ti Max-Q (Pascal) | **580** (Pascal needs the proprietary 580 branch; 590+ dropped it) | 25 steps ~82 s, DPM++ 12 steps ~49 s |
 
 The two nodes differ, so tune each one (see "Tuning a node"). Numbers drift
 upward over a long run on the 9570 (power-capped Max-Q part), so treat them as rough.
