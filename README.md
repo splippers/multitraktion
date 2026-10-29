@@ -206,12 +206,17 @@ default config is fp32 + sequential offload, which is correct on any GPU.
 Measured on the XPS 15 7590 (GTX 1650 Mobile, 4GB): fp32 + sequential offload +
 channels_last, 25 steps, 512px = 60.7 s/img; DPM++ at 12 steps = 28.3 s/img.
 
-## LCM-LoRA preset (about 4x faster)
+## LCM-LoRA preset (draft mode, not a replacement)
 
 `fleet/config-lcm.json` renders in 4 steps with the LCM-LoRA merged into the UNet
 and no unconditional pass (guidance 1.0), with the ControlNet weakened to 0.6 and
-switched off after 60% of the steps. Measured on LAVE (GTX 1650), 4 prompts:
-28-30 s/img with the default DPM++ 12-step config vs 7.5 s/img. LCM at full
-ControlNet strength looks flat and traces the outline too literally; at 0.6 it follows the
-prompt. The style is cleaner and more saturated than DPM++, not identical -
-run with `worker.py --config fleet/config-lcm.json`. Needs `peft` (in requirements.txt).
+switched off after 60% of the steps. Measured on LAVE (GTX 1650): 7.5 s/img against
+28-30 s/img for the default DPM++ 12-step config. Run it with
+`worker.py --config fleet/config-lcm.json`. Needs `peft` (in requirements.txt).
+
+**It is not quality-neutral.** On 8 real prompts the LCM output is flatter and more
+saturated, and loses the weather, dusk lighting and railway context (tracks, steam
+locomotive) that DPM++ keeps. Turning guidance up to 1.5 and the ControlNet down to
+0.3 (`guidance`, `control_scale`, `control_end` in the config) recovers some subject
+detail but costs the speed advantage (11 s/img, 2.5x) and does not recover the mood.
+Use it for quick drafts and thumbnails; keep DPM++ 12 for final renders.
