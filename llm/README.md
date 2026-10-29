@@ -29,4 +29,7 @@ Notes
 coordinator's). It serves an OpenAI-compatible API with tool calling on
 `127.0.0.1:8090` only; it holds ~3.4 GB VRAM and ~14 GB RAM, so
 `systemctl --user stop multitraktion-llm` before running the image worker or a game.
+**It shares the 4 GB GPU with the render worker, so don't enable both at boot.** On LAVE the
+worker is enabled and the LLM is started by hand:
+`sudo systemctl stop multitraktion-worker && systemctl --user start multitraktion-llm`, and back again afterwards.
 `MODEL` points at Ollama's blob for qwen3-coder:30b - update it if Ollama prunes it.

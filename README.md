@@ -183,6 +183,13 @@ loginctl enable-linger $USER      # start at boot without a login
 journalctl --user -u multitraktion-coordinator -f
 ```
 
+### Worker at boot
+
+`deploy/multitraktion-worker.service` is a system unit (`sudo systemctl enable --now multitraktion-worker`),
+configured through `/etc/default/multitraktion` (`COORDINATOR=`) and the node's `worker-config.json`.
+Current fleet config: DPM++ 12 steps plus DeepCache (`"cache_interval": 2`), about 1.5x faster than
+plain DPM++ 12 with near-identical output; 3 gives 1.9x but drifts visibly.
+
 ## Tuning a node
 
 The built-in defaults are the best config measured on the XPS 15 7590 (GTX 1650
